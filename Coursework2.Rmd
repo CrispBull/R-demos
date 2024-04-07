@@ -1,0 +1,273 @@
+---
+title: "Blood Pressure and Dietary Calcium"
+author: "Chidiebere Nwokocha"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE, warning=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+
+## Dependencies
+library(knitr)
+library(kableExtra)
+library(gridExtra)
+library(tidyverse)
+library(xtable)
+library(readxl)
+library(writexl)
+library(hrbrthemes)
+library(cowplot)
+
+## References
+# https://www.cpc.unc.edu/projects/china
+```
+
+### Introduction
+```{r, echo=FALSE, cache=TRUE}
+description <- tibble(
+  id = "Participants identification number each survey year. This is a yearly survey that follows participants across many years and the ids are unique to these participants and reused for the given participant each year", 
+  age = "Participant age at each survey year",
+  location = "Participants living location at the time of survey. This categories here can be 1 or 2 where 1 denotes urban location and 2 for rural location",
+  gender = "Participants gender. 1 for male and 2 for female",
+  nation = "Participant nationality",
+  waves = "The survey year. The dataset starts from 2000 to 2009 and within this period the survey has held for 2000, 2004, 2006 and 2009",
+  smoking = "Denotes if the given participant smokes or not. 0 for non-smokers and 1 for smokers",
+  alcohol = "This is the alcohol consumption frequency per week. 1 unit represents one glass of alcohol. The values here tell how many units participant took per week on average",
+  dgHBP = "This is the hypertension diagnostic report. Categories here are either 0 or 1. 0 meaning no hypertention diagnostic report and 1 for any diagnostic report",
+  sbp = "This is the average (mean) systolic blood pressure measurement taken from 3 measurements",
+  dbp = "This is the average (mean) diastolic blood pressure measurement taken from 3 measurements",
+  bmi = "The Body ass Index calculated using participan's weight and height with an Adolphe Quetelet Formula (Weight (Cm)/[Height (m)]^2)",
+  nrg = "Energy intake of the participant expressed in kCal",
+  dietCa = "Partiicpants dietary calcium intake measured in mg",
+  met_m = "Physical activity of participants expressed in the number of hours per week of physical activity"
+  )
+
+description_table <- pivot_longer(
+  description,
+  cols = everything(),
+  names_to = "Variable",
+  values_to = "Description"
+)
+
+
+kable(description_table, caption = "Dataset variables and description") %>%
+  kable_styling(bootstrap_options = c("striped", "condensed"))
+```
+
+```{r, echo=FALSE, cache=TRUE}
+## Importing data used in analysis. 
+
+bp_calcium_data <- read_xlsx("~/Desktop/coursework2 BI datasets/DATASET_DIETARY CALCIUM INTAKE AND HYPERTENSION IN URBAN AND RURAL POPULATIONS.xlsx")
+```
+
+### Analysis of raw data
+```{r, echo=FALSE}
+no_of_rows <- nrow(bp_calcium_data)
+no_of_cols <- ncol(bp_calcium_data)
+
+
+bp_level <- function(systolic, diastolic) {
+  case_when(
+    systolic < 120.0 & diastolic < 80.0 ~ "Normal",
+    (systolic >= 120.0 & systolic < 130) & diastolic < 80.0 ~ "Elevated",
+    (systolic >= 130.0 & systolic < 140.0) | (diastolic >= 80.0 & diastolic < 90.0) ~ "HBP Stage 1", ## considered normal
+    (systolic >= 140.0 & systolic < 180.0) | (diastolic >= 90.0 & diastolic < 120.0) ~ "HBP Stage 2",
+    systolic >= 180.0 | diastolic >= 120.0 ~ "HBP Stage 3",
+    TRUE ~ "Uncategorized"
+  )
+}
+
+#gender_counts <- table(bp_calcium_data$Gender)
+#gender_counts_prop <- prop.table(gender_counts)
+
+#bp_females <- bp_calcium_data |> 
+  #filter(Gender == 2)
+#bp_males <- bp_calcium_data |>
+#  filter(Gender == 1)
+
+
+minAge <- min(bp_calcium_data$Age)
+maxAge <- max(bp_calcium_data$Age)
+avgAge <- mean(bp_calcium_data$Age)
+
+avgBmi <- mean(bp_calcium_data$BMI, na.rm = TRUE)
+bmi_na_count <- sum(is.na(
+  bp_calcium_data$BMI
+))
+
+prop_bmi_missing <- (bmi_na_count/no_of_rows) * 100
+  
+```
+
+The dataset contains `r no_of_rows` rows and `r no_of_cols` columns. The minimum age of a participant in the dataset is `r minAge` and the maximum age is `r maxAge`. The average age participants around `r round(avgAge)` years. The average BMI of participants is around `r avgBmi`, which suggests a healthy population. However there over `r bmi_na_count` missing values, which makes up about `r round(prop_bmi_missing, 1)`% of data, a significant number of values. The following chart provides a summary of the BMI for the data;
+
+```{r echo=FALSE, cache=TRUE, warning=FALSE, out.width="100%"}
+## na values automatically removed
+bmi_with_na_plot <- bp_calcium_data |>
+  filter(!is.na(BMI)) |>
+  ggplot(aes(x = BMI)) +
+  geom_histogram(binwidth = 1, fill = "#69b3a2", color = "#e9ecef", alpha = 0.9) + #aes(y = ..density..), 
+  geom_vline(aes(xintercept = avgBmi), color = "blue", linetype = "dashed", size = 1) +
+  #geom_density(alpha = 0.5, fill = "skyblue", size = 0.8) +
+  labs(
+    title = "Histogram of BMI distribution",
+    caption = "Fig1"
+    ) +
+  theme_ipsum() +
+  theme(
+    plot.title = element_text(size = 12)
+  )
+
+bmi_boxplot <- bp_calcium_data |> 
+  filter(!is.na(BMI)) |>
+  ggplot(aes(x = factor(Location), y = BMI)) +
+  geom_boxplot() +
+  geom_jitter(color = "grey", size = 0.4, alpha = 0.3) +
+  theme_ipsum() +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(size = 12)
+  ) +
+  xlab("Location") +
+  labs(
+    title = "BMI distrubution by Location",
+    subtitle = "Distribution with jittering to show density",
+    caption = "Fig2"
+    ) +
+  coord_flip()
+
+plot_grid(bmi_with_na_plot, bmi_boxplot, ncol = 2)
+
+location_prop <- prop.table(table(factor(bp_calcium_data$Location)))
+```
+
+In **Fig1** above, we can see that the BMI is evenly distributed but there are outliers which we can clearly see in **Fig2**. In both charts we can see that data the mean and median are both concentrated around 23 for the BMI, suggesting a healthy population sample. From **Fig2** we can also see that there are more data collected for Location 2, and in fact, about `r round(location_prop[2], 2) * 100`% of participants are from rural areas (Location 2). We also see that the average BMI of urban sample is slightly higher than that of rural participants.
+
+```{r, echo=FALSE, cache=TRUE, warning=FALSE}
+### systolic and diastolic
+systolic_na_prop <- prop.table(table(is.na(bp_calcium_data$SBP))) * 100
+diastolic_na_prop <- prop.table(table(is.na(bp_calcium_data$DBP))) * 100
+
+sbp_summary <- bp_calcium_data |>
+  select(SBP) |>
+  #filter(!is.na(SBP)) |>
+  summarise(
+    "Minimum" = round(min(SBP, na.rm = TRUE), 2),
+    "Maximum" = round(max(SBP, na.rm = TRUE), 2),
+    "Mean" = round(mean(SBP, na.rm = TRUE), 2),
+    "Median" = round(median(SBP, na.rm = TRUE), 2),
+    "Missing values" = as.integer(sum(is.na(SBP)))
+  ) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "Summary",
+    values_to = "Value"
+    )
+
+dbp_summary <- bp_calcium_data |>
+  select(DBP) |>
+  summarise(
+    "Minimum" = round(min(DBP, na.rm = TRUE), 2),
+    "Maximum" = round(max(DBP, na.rm = TRUE), 2),
+    "Mean" = round(mean(DBP, na.rm = TRUE), 2),
+    "Median" = round(median(DBP, na.rm = TRUE), 2),
+    "Missing values" = as.integer(sum(is.na(DBP)))) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "Summary",
+    values_to = "Value"
+    )
+
+
+kable(dbp_summary, caption = "Diastolic Blood pressure summary (mmHg)") %>%
+  kable_classic_2(full_width = F, position = "float_right") %>%
+  #kable_material(c("striped", "hover"), full_width = F, position = "float_left") %>%
+  #kable_styling(full_width = FALSE, bootstrap_options = c("striped", "condensed"), position = "float_right") %>%
+  column_spec(2, width = "25em")
+
+# kable(sbp_summary, caption = "Systolic Blood pressure summary (mmHg)") %>%
+#   #kable_classic_2(full_width = F, position = "left") #R%>%
+#   #kable_material(c("striped", "hover"), full_width = F, position = "left") %>%
+#   kable_styling(full_width = FALSE, bootstrap_options = c("striped", "condensed"), position = "left") %>%
+#   column_spec(1, width = "15em")
+
+```
+
+In the table on the left, we see a basic summary of the diastolic measurements of the data. We observe that the values range from 25*mmHg* to 170*mmHg*, the mean and median are also around the same value which indicates that the distribution is approximately symmetrical (not skewed) and data is evenly distributed around the center (bell curve). We also observe that there are over 850 missing values in this, which makes up about `r round(systolic_na_prop, 2)`% of the data, a significant proportion. 
+```{r, echo=FALSE, include=FALSE}
+systolic_diastolic_reshaped <- bp_calcium_data |>
+  filter(!is.na(SBP) | !is.na(DBP)) |>
+  pivot_longer(cols = c(SBP, DBP), names_to = "BP Measure", values_to = "Value")
+
+
+systolic_density <- systolic_diastolic_reshaped |>
+  ggplot(aes(x = Value, fill = `BP Measure`, color = `BP Measure`)) +
+  geom_density(alpha = 0.7) +
+  theme_ipsum() +
+  xlab("Systolic and Diastolic blood pressure") +
+  ylab("") +
+  labs(caption = "Fig3")
+
+systolic_diastolic_violin <- systolic_diastolic_reshaped |>
+  ggplot(aes(x = `BP Measure`, y = Value, fill = `BP Measure`)) +
+  geom_violin(alpha = 0.7) +
+  #facet_wrap( ~ factor(Location)) +
+  theme_bw() +
+  xlab("Diastolic / Systolic Blood Pressure") +
+  ylab("Value") +
+  labs(caption = "Fig4") +
+  theme(legend.position="none") 
+  
+
+systolic_density
+systolic_diastolic_violin
+
+## Dietary calcium
+diet_cal_summary <- summary(bp_calcium_data$DietCa)
+
+bp_calcium_data |> 
+  ggplot(aes(y = DietCa)) +
+  geom_boxplot()
+
+bp_calcium_data |> 
+  ggplot(aes(x = DietCa)) +
+  geom_density()
+
+
+## Gender 
+table(bp_calcium_data$Gender)
+prop.table(table(bp_calcium_data$Gender))
+
+gender_factors <- factor(bp_calcium_data$Gender)
+bp_calcium_data$Gender <- gender_factors
+
+bp_calcium_data |>
+  mutate(gndr = fct_recode(Gender,
+                           "Male" = "1",
+                           "Female" = "2"
+                           )
+         ) |>
+  select(Gender, gndr) |>
+  ggplot(aes(x = factor(gndr))) +
+  geom_bar(fill = "#f68060", alpha = 0.7, width = 0.4) +
+  theme_bw() +
+  coord_flip() +
+  xlab("")
+
+### Alcohol
+summary(bp_calcium_data$Smoking)
+bp_calcium_data |>
+  mutate(gndr = fct_recode(factor(Smoking),
+                           "Smokers" = "0",
+                           "Non-Smokers" = "1"
+                           )
+         ) |>
+  select(Gender, gndr) |>
+  ggplot(aes(x = factor(gndr))) +
+  geom_bar(fill = "#f68060", alpha = 0.7, width = 0.4) +
+  theme_bw() +
+  coord_flip() +
+  xlab("")
+
+```
