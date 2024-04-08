@@ -18,12 +18,14 @@ library(readxl)
 library(writexl)
 library(hrbrthemes)
 library(cowplot)
+library(viridis)
 
 ## References
 # https://www.cpc.unc.edu/projects/china
 ```
 
 ### Introduction
+
 ```{r, echo=FALSE, cache=TRUE}
 description <- tibble(
   id = "Participants identification number each survey year. This is a yearly survey that follows participants across many years and the ids are unique to these participants and reused for the given participant each year", 
@@ -51,7 +53,7 @@ description_table <- pivot_longer(
 )
 
 
-kable(description_table, caption = "Dataset variables and description") %>%
+kable(description_table, caption = "Table 1: Dataset variables and description") %>%
   kable_styling(bootstrap_options = c("striped", "condensed"))
 ```
 
@@ -62,6 +64,7 @@ bp_calcium_data <- read_xlsx("~/Desktop/coursework2 BI datasets/DATASET_DIETARY 
 ```
 
 ### Analysis of raw data
+
 ```{r, echo=FALSE}
 no_of_rows <- nrow(bp_calcium_data)
 no_of_cols <- ncol(bp_calcium_data)
@@ -100,20 +103,46 @@ prop_bmi_missing <- (bmi_na_count/no_of_rows) * 100
   
 ```
 
-The dataset contains `r no_of_rows` rows and `r no_of_cols` columns. The minimum age of a participant in the dataset is `r minAge` and the maximum age is `r maxAge`. The average age participants around `r round(avgAge)` years. The average BMI of participants is around `r avgBmi`, which suggests a healthy population. However there over `r bmi_na_count` missing values, which makes up about `r round(prop_bmi_missing, 1)`% of data, a significant number of values. The following chart provides a summary of the BMI for the data;
+The dataset contains `r no_of_rows` rows and `r no_of_cols` columns. The minimum age of a participant in the dataset is `r minAge` and the maximum age is `r maxAge`. The average age participants around `r round(avgAge)` years.
+
+The average BMI of participants is around `r round(avgBmi, 2)`, which suggests a healthy population. However there over `r bmi_na_count` missing values, which makes up about `r round(prop_bmi_missing, 1)`% of data. The following table provides a summary of the BMI;
+
+```{r, echo=FALSE, cache=TRUE}
+bmi_summary <- bp_calcium_data |>
+  select(BMI) |>
+  #filter(!is.na(SBP)) |>
+  summarise(
+    "Minimum" = round(min(BMI, na.rm = TRUE), 2),
+    "Maximum" = round(max(BMI, na.rm = TRUE), 2),
+    "Mean" = round(mean(BMI, na.rm = TRUE), 2),
+    "Median" = round(median(BMI, na.rm = TRUE), 2),
+    "Missing values" = as.integer(sum(is.na(BMI)))
+  ) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "Summary",
+    values_to = "Value"
+    )
+
+kable(bmi_summary, caption = "Table 2: BMI summary (cm/m^2)", booktabs = TRUE) %>%
+  kable_material(c("striped", "hover"), full_width = T)
+
+```
+
+From the above we can see that the minimum BMI in the data set is around 13, which is an unhealthy BMI and falls within a severely underweight BMI, the maximum BMI is also a very unhealthy number, which both calls for more inquiry into those values. We also notice that the mean and median are very close, which means the data is evenly distributed. The charts below provide some visual clarity;
 
 ```{r echo=FALSE, cache=TRUE, warning=FALSE, out.width="100%"}
 ## na values automatically removed
 bmi_with_na_plot <- bp_calcium_data |>
   filter(!is.na(BMI)) |>
-  ggplot(aes(x = BMI)) +
-  geom_histogram(binwidth = 1, fill = "#69b3a2", color = "#e9ecef", alpha = 0.9) + #aes(y = ..density..), 
-  geom_vline(aes(xintercept = avgBmi), color = "blue", linetype = "dashed", size = 1) +
-  #geom_density(alpha = 0.5, fill = "skyblue", size = 0.8) +
+  ggplot(aes(x = BMI, y = ..density..)) +
+  geom_histogram(binwidth = .5, fill = "#69b3a2", color = "#e9ecef", alpha = 0.6) + #aes(y = ..density..), 
+  geom_density(color = "#69b3a2", alpha = 0.8) +
   labs(
-    title = "Histogram of BMI distribution",
+    title = "BMI distribution",
     caption = "Fig1"
     ) +
+  geom_vline(aes(xintercept = avgBmi), color = "black", linetype = "dashed", size = 1) +
   theme_ipsum() +
   theme(
     plot.title = element_text(size = 12)
@@ -121,9 +150,10 @@ bmi_with_na_plot <- bp_calcium_data |>
 
 bmi_boxplot <- bp_calcium_data |> 
   filter(!is.na(BMI)) |>
-  ggplot(aes(x = factor(Location), y = BMI)) +
+  ggplot(aes(x = factor(Location), y = BMI, fill = factor(Location))) +
   geom_boxplot() +
-  geom_jitter(color = "grey", size = 0.4, alpha = 0.3) +
+  scale_fill_viridis(discrete = TRUE, alpha = 0.9) +
+  geom_jitter(color = "grey", size = 0.2, alpha = 0.4) +
   theme_ipsum() +
   theme(
     legend.position = "none",
@@ -131,23 +161,23 @@ bmi_boxplot <- bp_calcium_data |>
   ) +
   xlab("Location") +
   labs(
-    title = "BMI distrubution by Location",
-    subtitle = "Distribution with jittering to show density",
+    title = "BMI by Location",
+    subtitle = "Boxplot with jittering to show density",
     caption = "Fig2"
-    ) +
-  coord_flip()
-
+    ) 
 plot_grid(bmi_with_na_plot, bmi_boxplot, ncol = 2)
 
 location_prop <- prop.table(table(factor(bp_calcium_data$Location)))
 ```
 
-In **Fig1** above, we can see that the BMI is evenly distributed but there are outliers which we can clearly see in **Fig2**. In both charts we can see that data the mean and median are both concentrated around 23 for the BMI, suggesting a healthy population sample. From **Fig2** we can also see that there are more data collected for Location 2, and in fact, about `r round(location_prop[2], 2) * 100`% of participants are from rural areas (Location 2). We also see that the average BMI of urban sample is slightly higher than that of rural participants.
+In **Fig1** above, we can see that the BMI is evenly distributed but there are outliers which we can clearly see in **Fig2**. In both charts we can see that data the mean and median are both concentrated around 23 for the BMI, suggesting a healthy population sample. From **Fig2** we can also see that there are more data collected for Location 2, and in fact, about `r round(location_prop[2], 2) * 100`% of participants are from rural areas (Location 2). We also see that the average BMI of urban participants (Location 1) is slightly higher than that of rural participants.
+
+For the blood pressure measurements (systolic and diastolic measures), we notice a similar pattern in the distribution of the table, **Table 3** and **Table 4** gives an general summary of both variables.
 
 ```{r, echo=FALSE, cache=TRUE, warning=FALSE}
 ### systolic and diastolic
-systolic_na_prop <- prop.table(table(is.na(bp_calcium_data$SBP))) * 100
-diastolic_na_prop <- prop.table(table(is.na(bp_calcium_data$DBP))) * 100
+systolic_na_prop <- round((mean(is.na(bp_calcium_data$SBP)) * 100), 1)
+diastolic_na_prop <- round((mean(is.na(bp_calcium_data$DBP)) * 100), 1)
 
 sbp_summary <- bp_calcium_data |>
   select(SBP) |>
@@ -179,36 +209,50 @@ dbp_summary <- bp_calcium_data |>
     values_to = "Value"
     )
 
-
-kable(dbp_summary, caption = "Diastolic Blood pressure summary (mmHg)") %>%
-  kable_classic_2(full_width = F, position = "float_right") %>%
+kable(sbp_summary, caption = "Table 4: Systolic Blood pressure summary (mmHg)") %>%
+  #kable_classic_2(full_width = F, position = "float_right") %>%
   #kable_material(c("striped", "hover"), full_width = F, position = "float_left") %>%
-  #kable_styling(full_width = FALSE, bootstrap_options = c("striped", "condensed"), position = "float_right") %>%
-  column_spec(2, width = "25em")
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "condensed"), position = "float_right") %>%
+  column_spec(2, width = "25em") 
 
-# kable(sbp_summary, caption = "Systolic Blood pressure summary (mmHg)") %>%
-#   #kable_classic_2(full_width = F, position = "left") #R%>%
-#   #kable_material(c("striped", "hover"), full_width = F, position = "left") %>%
-#   kable_styling(full_width = FALSE, bootstrap_options = c("striped", "condensed"), position = "left") %>%
-#   column_spec(1, width = "15em")
+kable(dbp_summary, caption = "Table 3: Diastolic Blood pressure summary (mmHg)") %>%
+  #kable_classic_2(full_width = F, position = "float_right") %>%
+  #kable_material(c("striped", "hover"), full_width = F, position = "float_left") %>%
+  kable_styling(full_width = FALSE, bootstrap_options = c("striped", "condensed"), position = "left") %>%
+  column_spec(2, width = "20em")
 
 ```
 
-In the table on the left, we see a basic summary of the diastolic measurements of the data. We observe that the values range from 25*mmHg* to 170*mmHg*, the mean and median are also around the same value which indicates that the distribution is approximately symmetrical (not skewed) and data is evenly distributed around the center (bell curve). We also observe that there are over 850 missing values in this, which makes up about `r round(systolic_na_prop, 2)`% of the data, a significant proportion. 
-```{r, echo=FALSE, include=FALSE}
+In **Table 3**, we see a summary of the Diastolic measurements of the data. We observe that the values range from 25*mmHg* to 170*mmHg*, the mean and median are also around the same value which indicates that the distribution is approximately symmetrical (not skewed) and data is evenly distributed around the center (bell curve). We also observe that there are 854 missing values, which makes up about `r diastolic_na_prop`% of the data, a significant proportion. **Table 4** shows a summary of the Systolic Blood pressure measurements. We can see that the the minimum and maximum values ranges from 76.67**mmHg** to 240**mmHg**, the difference in the mean and median values also suggests that the distribution is skewed unlike the diastolic measures. Also, about 7% of the values are missing.
+
+```{r, echo=FALSE, cache=TRUE, warning=FALSE, out.width="80%"}
 systolic_diastolic_reshaped <- bp_calcium_data |>
-  filter(!is.na(SBP) | !is.na(DBP)) |>
-  pivot_longer(cols = c(SBP, DBP), names_to = "BP Measure", values_to = "Value")
-
-
-systolic_density <- systolic_diastolic_reshaped |>
-  ggplot(aes(x = Value, fill = `BP Measure`, color = `BP Measure`)) +
-  geom_density(alpha = 0.7) +
+  select(SBP, DBP, Location) |>
+  pivot_longer(cols = c(SBP, DBP), names_to = "BP Measure", values_to = "Value") |>
+  filter(!is.na(Value))
+  
+bp_density_plot <- systolic_diastolic_reshaped |>
+  ggplot(aes(x = Value, fill = `BP Measure`, color = `BP Measure`)) + 
+  geom_density(alpha = 0.6) +
   theme_ipsum() +
   xlab("Systolic and Diastolic blood pressure") +
   ylab("") +
-  labs(caption = "Fig3")
+  scale_fill_discrete(
+    name = "Blood Pressure Measure",
+    labels = c("Diastolic", "Systolic")
+    ) +
+  scale_color_discrete(
+    name = "Blood Pressure Measure",
+    labels = c("Diastolic", "Systolic")
+  ) +
+  labs(caption = "Fig3") 
 
+bp_density_plot
+```
+
+In the **Fig3** above, we can see that both distributions are look evenly distributed, however the systolic plot a long tail on the right, suggesting that there are some outliers. We also see that most of the systolic variables falls between 100 and 140. We can get a view of the distribution and spread when we look at the violin chart below.
+
+```{r, echo=FALSE, cache=TRUE, warning=FALSE, out.width="80%"}
 systolic_diastolic_violin <- systolic_diastolic_reshaped |>
   ggplot(aes(x = `BP Measure`, y = Value, fill = `BP Measure`)) +
   geom_violin(alpha = 0.7) +
@@ -218,56 +262,192 @@ systolic_diastolic_violin <- systolic_diastolic_reshaped |>
   ylab("Value") +
   labs(caption = "Fig4") +
   theme(legend.position="none") 
-  
 
-systolic_density
 systolic_diastolic_violin
+```
 
-## Dietary calcium
-diet_cal_summary <- summary(bp_calcium_data$DietCa)
+In **Fig4** above, we can clearly see the range of spread in the measures, we also see that the systolic measure is skewed because of the unevenness of it's tails, unlike the diastolic measure which is more fairly distributed. Therefore we might need to look at the outliers here as well before analysis. We can also take a look at the distribution across locations as shown in **Fig5** below.
 
-bp_calcium_data |> 
-  ggplot(aes(y = DietCa)) +
-  geom_boxplot()
+```{r, echo=FALSE, cache=TRUE, warning=FALSE, out.width="80%"}
+bp_violin_locations <- systolic_diastolic_reshaped |>
+  ggplot(aes(x = `BP Measure`, y = Value, fill = `BP Measure`)) +
+  geom_violin(alpha = 0.7) +
+  facet_wrap( ~ factor(Location)) +
+  theme_bw() +
+  xlab("Diastolic / Systolic Blood Pressure") +
+  ylab("Value") +
+  labs(caption = "Fig5") +
+  theme(legend.position="none") 
 
-bp_calcium_data |> 
+bp_violin_locations
+```
+
+As we can see from the above chart, we can see that the distribution is very similar across locations, so a very good sample. We can also see that the measures of Location 2 is more widely spread than Location 1.
+
+Dietary calcium is core to our analysis and looking at the data, we can see that participants take a very varying amount of dietary calcium. The following table shows a summary of the dietary calcium intake by participants
+
+```{r, echo=FALSE, cache=TRUE}
+
+dCal_summary <- bp_calcium_data |>
+  select(DietCa) |>
+  summarise(
+    "Minimum" = round(min(DietCa, na.rm = TRUE), 2),
+    "Maximum" = round(max(DietCa, na.rm = TRUE), 2),
+    "Mean" = round(mean(DietCa, na.rm = TRUE), 2),
+    "Median" = round(median(DietCa, na.rm = TRUE), 2),
+    "Missing values" = round(sum(is.na(DietCa)), 0)
+  ) |>
+  pivot_longer(
+    cols = everything(),
+    names_to = "Summary",
+    values_to = "Value"
+    )
+
+kable(dCal_summary, caption = "Table 5: Dietary calcium summary", booktabs = TRUE) %>%
+  kable_material(c("striped", "hover"), full_width = T)
+```
+
+From **Table 5** above, we can see that the mimimum dietary calcium intake is 0*mg* and the maximum is 19,671*mg*, these are both way outside the recommended proportions of calcium per day which we would explore in detail for these values. We can also see the difference between the mean and median values which shows that the distribution is skewed as the following chart shows.
+
+```{r, echo=FALSE, cache=TRUE}
+calc_intake_density <- bp_calcium_data |>
+  select(Location, DietCa) |>
   ggplot(aes(x = DietCa)) +
-  geom_density()
+  geom_histogram(binwidth = 30, fill = "#69b3a2") +
+  geom_density(color = "#69b3a2", fill = "#69b3a2") +
+  theme_ipsum() +
+  labs(
+    caption = "Fig6"
+  ) +
+  xlab("Calcium intake/day (mg)") +
+  ylab("")
+calc_intake_density
+```
 
+In **Fig6** we can see that the data is massively skewed, we also observe that majority of participants take between below 500mg per day, therefore something might be wrong with the data to cause such a massive skew. We can properly visualize the place where the data is coming from with a boxplot/violin plot and see the density of where a bulk of the values lies.
 
-## Gender 
-table(bp_calcium_data$Gender)
-prop.table(table(bp_calcium_data$Gender))
+```{r, echo=FALSE, cache=TRUE}
+diet_calc_box <- bp_calcium_data |> 
+  select(Location, DietCa) |>
+  ggplot(aes(x = factor(Location), y = DietCa, fill = factor(Location))) +
+  geom_boxplot() +
+  scale_fill_viridis(discrete = TRUE, alpha = 0.9) +
+  geom_jitter(color = "grey", size = 0.2, alpha = 0.4) +
+  theme_ipsum() +
+  theme(
+    legend.position = "none",
+    plot.title = element_text(size = 12)
+  ) +
+  xlab("Location") +
+  ylab("Calcium intake/day (mg)") +
+  labs(
+    title = "Dietary Calcium by Location",
+    caption = "Fig7"
+    ) 
+
+diet_calc_box
+```
+
+From **Fig7** above, we can see that the outliers drastically skewed data, especially the data from participants in Location 2, so in order to work with this measure, we need to address this.  
+
+```{r, echo=FALSE, cache=TRUE, warning=FALSE, out.width="80%"}
+
+# Gender
+gender_1_prop <- round((mean(bp_calcium_data$Gender == 1) * 100), 2)
+gender_2_prop <- round((mean(bp_calcium_data$Gender == 2) * 100), 2)
 
 gender_factors <- factor(bp_calcium_data$Gender)
 bp_calcium_data$Gender <- gender_factors
 
-bp_calcium_data |>
-  mutate(gndr = fct_recode(Gender,
-                           "Male" = "1",
-                           "Female" = "2"
-                           )
-         ) |>
-  select(Gender, gndr) |>
-  ggplot(aes(x = factor(gndr))) +
-  geom_bar(fill = "#f68060", alpha = 0.7, width = 0.4) +
+gender_barchart <- bp_calcium_data |>
+  select(Gender) |>
+  ggplot(aes(x = Gender, fill = Gender)) +
+  geom_bar(alpha = 0.7, width = 0.4) +
   theme_bw() +
-  coord_flip() +
-  xlab("")
+  xlab("Gender") +
+  theme(
+    legend.position = "none"
+  )
+  
+  # scale_fill_discrete(
+  #   name = "Gender",
+  #   labels = c("Male", "Female")
+  #   ) +
+  # scale_color_discrete(
+  #   name = "Gender",
+  #   labels = c("Male", "Female")
+  # ) 
 
-### Alcohol
-summary(bp_calcium_data$Smoking)
-bp_calcium_data |>
-  mutate(gndr = fct_recode(factor(Smoking),
-                           "Smokers" = "0",
-                           "Non-Smokers" = "1"
+## Smoking
+smoke_factors <- factor(bp_calcium_data$Smoking)
+bp_calcium_data$Smoking <- smoke_factors
+#table(bp_calcium_data$Smoking, useNA = "always")
+smoker_formatted <- bp_calcium_data |>
+  filter(!is.na(Smoking)) |>
+  mutate(Smoke = fct_recode(Smoking,
+                           "Non-smoker" = "0",
+                           "Smoker" = "1"
                            )
-         ) |>
-  select(Gender, gndr) |>
-  ggplot(aes(x = factor(gndr))) +
-  geom_bar(fill = "#f68060", alpha = 0.7, width = 0.4) +
-  theme_bw() +
-  coord_flip() +
-  xlab("")
+         )
 
+
+smoker_barchart <-  smoker_formatted |>
+  select(Smoke) |>
+  ggplot(aes(x = Smoke, fill = Smoke)) +
+  geom_bar(alpha = 0.7, width = 0.4) +
+  theme_bw() +
+  xlab("Smoke") +
+  theme(
+    legend.position = "none"
+  ) 
+
+## Diagnostic Report
+diagnostic_factors <- factor(bp_calcium_data$DgHBP)
+bp_calcium_data$DgHBP <- diagnostic_factors
+#table(bp_calcium_data$DgHBP, useNA = "always") # no missing values
+
+diagnosed_formatted <- bp_calcium_data |>
+  mutate(Diagnosed = fct_recode(DgHBP,
+                           "No report" = "0",
+                           "Has report" = "1"
+                           )
+         )
+
+
+diagnosis_barchart <-  diagnosed_formatted |>
+  select(Diagnosed) |>
+  ggplot(aes(x = Diagnosed, fill = Diagnosed)) +
+  geom_bar(alpha = 0.7, width = 0.4) +
+  theme_bw() +
+  xlab("Hypertention Diagnosis") +
+  theme(
+    legend.position = "none"
+  )
+
+## Alcohol Consumption Frequency
+alcohol_consumption_plot <- bp_calcium_data |>
+  filter(!is.na(Alcohol)) |>
+  ggplot(aes(y = Alcohol)) +
+  geom_boxplot(fill = "#69b3a2", alpha = 0.7) +
+  scale_y_continuous(breaks = seq(0, 8, 2)) +
+  theme_bw() +
+  ylab("Glass per week") +
+  labs(title = "Alcohol consumption per week") +
+  theme(
+    plot.title = element_text(size = 10)
+  )
+
+plot_grid(
+  gender_barchart, smoker_barchart, diagnosis_barchart, alcohol_consumption_plot, ncol = 2, labels = "auto"
+  )
 ```
+
+In the dataset, both genders are represented although which gender it is isn't specified. We can observe that Gender 1 makes up `r gender_1_prop`% of the data and gender 2 makes up the remaining `r gender_2_prop`%. This is represented in plot **a** above as we can see from the barchart. We can also see that most of the participants are non smokers (plot **b**), In plot **c** we see a similar shape as most of the participants are not reported to be hypertensive after diagnosis. In plot **d** we can see that most of the participants drink at least 0 glass of alcohol per week although there are participants who average 3+ glasses per week as seen in the boxplot. Also, there are missing data for Alcohol*(59)*, Smoking*(2)*
+
+### Data Cleaning and Exploratory Data Analysis. 
+In the above section, we went through most of the variables in our raw dataset to understand the distribution of the data as well as other necessary details like missing data, outliers, and other necessary summary statistic which are necessary to help us prepare our data for more indepth analysis which we would perform in this section.  
+
+#### Cleaning and preparing data
+
+#### Exploratory Data Analysis. 
+
