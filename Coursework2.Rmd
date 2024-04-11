@@ -65,7 +65,8 @@ bp_calcium_data <- bp_raw_data
 ```
 
 ### Analysis of raw data
-After importing our data to our workspace, it looks like **Table 1** below;    
+
+After importing our data to our workspace, it looks like **Table 1** below;
 
 ```{r, echo=FALSE, cache=TRUE}
 data_types <- sapply(bp_raw_data, class)
@@ -77,7 +78,7 @@ kable(summary_types, caption = "Table 2: Variables data types", booktabs = TRUE)
   kable_classic(c("striped"), full_width = T)
 ```
 
-From the above we can see that our raw data is imported as numerical values for all columns even when we know some are categorical values and even a date type column (Waves) based on the column metadata in **Table 1**. We can take a glimpse of how the data looks below; 
+From the above we can see that our raw data is imported as numerical values for all columns even when we know some are categorical values and even a date type column (Waves) based on the column metadata in **Table 1**. We can take a glimpse of how the data looks below;
 
 ```{r, echo=FALSE, cache=TRUE}
 no_of_rows <- nrow(bp_calcium_data)
@@ -122,7 +123,6 @@ raw_random <- bp_raw_data |>
 kable(raw_random, caption = "Table 3: Sample from data", booktabs = TRUE) %>%
   kable_classic(c("striped"), full_width = T)
 ```
-
 
 From the above we can see several numerical variables as well as notice that there are missing values (NA) in our dataset. The dataset contains `r no_of_rows` rows and `r no_of_cols` columns. The minimum age of a participant in the dataset is `r minAge` and the maximum age is `r maxAge`. The average age participants around `r round(avgAge)` years.
 
@@ -372,7 +372,7 @@ diet_calc_box <- bp_calcium_data |>
 diet_calc_box
 ```
 
-From **Fig7** above, we can see that the outliers drastically skewed data, especially the data from participants in Location 2, so in order to work with this measure, we need to address this.  
+From **Fig7** above, we can see that the outliers drastically skewed data, especially the data from participants in Location 2, so in order to work with this measure, we need to address this.
 
 ```{r, echo=FALSE, cache=TRUE, warning=FALSE, out.width="80%"}
 
@@ -468,14 +468,15 @@ plot_grid(
 
 In the dataset, both genders are represented although which gender it is isn't specified. We can observe that Gender 1 makes up `r gender_1_prop`% of the data and gender 2 makes up the remaining `r gender_2_prop`%. This is represented in plot **a** above as we can see from the barchart. We can also see that most of the participants are non smokers (plot **b**). In plot **c** we can see that most of the participants are not reported to be hypertensive after diagnosis, so hypertension isn't prevalent amongst participants. In plot **d** we can see that most of the participants drink at least 0 glass of alcohol per week although there are participants who average 3+ glasses per week as seen in the boxplot. Also, there are missing data for Alcohol(59), Smoking(2).
 
-### Data Cleaning and Exploratory Data Analysis. 
-In the above section, we went through most of the variables in our raw dataset to understand the distribution of the data as well as other necessary details like missing data, outliers, and other necessary summary statistic which are necessary to help us prepare our data for more indepth analysis which we would perform in this section. 
+### Data Cleaning and Exploratory Data Analysis.
+
+In the above section, we went through most of the variables in our raw dataset to understand the distribution of the data as well as other necessary details like missing data, outliers, and other necessary summary statistic which are necessary to help us prepare our data for more indepth analysis which we would perform in this section.
 
 #### Cleaning and preparing data
+
 In order to make sure we properly analyse data and gain insights that are not flawed or biased, we need to clean our dataset by handling issues like missing values, data entry mistakes (which might lead to outliers or missing values) and skew results, duplicates, etc. This way we can ensure our data is valid and insights are meaningful. To properly prepare it for analysis, we might also go further to make sure that the variables are in the correct data type, and sometimes even create new variables or even rename columns and values for better clarity or insights.
 
 In **Table 1** we saw that several categorical types are imported as numerical (continuous) variables, these includes the variables *Location*, *Nation*, *Smoking*, which we would need to convert to categorical values (factor) and maybe give more descriptive names like renaming 1 in the Location variable to Urban and 2 to Rural. We can also see that *Waves*, which represents the survey years is imported as numeric so we would change it to a date column, but for the purpose of our analysis that may not be necessary. We can also rename some columns to make it clear what they do, like renaming **id** to **ParticipantId**, because at its current naming it seems like value is unique but it isn't really unique as it mostly represents the id of a participant so the same id occurs multiple times for each survey year, we also change the name to be uppercamelcase to maintain consistency with other variable names.
-
 
 ```{r, echo=FALSE, cache=TRUE}
 bp_calcium_data <- bp_raw_data |>
@@ -512,7 +513,7 @@ kable(summary_types, caption = "Table 6: Variables data types", booktabs = TRUE)
 
 ```
 
-After doing these above, our table columns now looks like the table above, compared to **Table 1** we saw earlier.  Also, if we take a glimpse of our dataset we see something much clearer like the table below; 
+After doing these above, our table columns now looks like the table above, compared to **Table 1** we saw earlier. Also, if we take a glimpse of our dataset we see something much clearer like the table below;
 
 ```{r, echo=FALSE, echo=FALSE, cache=TRUE}
 cleaned_random <- bp_calcium_data |>
@@ -523,9 +524,9 @@ kable(cleaned_random, caption = "Table 7: Sample from data", booktabs = TRUE) %>
   kable_classic(c("striped"), full_width = T)
 ```
 
-From **Table 7** above we can see clearer names for categorical values. However we can also see that there are missing values as well as other issues we found earlier when we looked at the columns.    
+From **Table 7** above we can see clearer names for categorical values. However we can also see that there are missing values as well as other issues we found earlier when we looked at the columns.
 
-From initial analysis, we saw that the following variables had missing values; *Smoking*, *Alcohol*, *SBP*, *DBP*, *BMI*, as well as *Met_m*. While there are many ways of dealing with missing data, it is largely dependent on the extent of missing data and context or even domain knowledge around the variable. Some strategies for dealing with missing data could include deletion, imputation or even model based methods. In our situation, we would be making use of both deletion and imputation methods. 
+From initial analysis, we saw that the following variables had missing values; *Smoking*, *Alcohol*, *SBP*, *DBP*, *BMI*, as well as *Met_m*. While there are many ways of dealing with missing data, it is largely dependent on the extent of missing data and context or even domain knowledge around the variable. Some strategies for dealing with missing data could include deletion, imputation or even model based methods. In our situation, we would be making use of both deletion and imputation methods.
 
 ```{r, echo=FALSE, cache=TRUE}
 
@@ -588,17 +589,18 @@ cleaned_bp_data <- bp_calcium_data |>
   select(-BMI_from_missing) |>
   filter(!is.na(Met_m))
 ```
-In our dataset, we can see that only two items are missing in the Smoking column, both participants (ParticipantId 1861 and ParticipantId 1933) have a diagnosis report of not being hypertensive and have values that fall within the normal distribution for the systolic and diastolic blood pressure measurement, so it seems like these samples are already well represented and it wouldn't affect our result to remove these rows from our dataset. 
 
-For Alcohol, there are 59 missing values, a small amount, however we would be inputing the data. Our method for inputing would be based on the participant id and their average number of glasses in rows where they have data for Alcohol. So for example, for participantId 1145 which has 2 missing glasses of alcohol values, we would get the average (mean) number of glasses of alcohol this participant takes and the use that to input the glasses of alcohol for the missing value, and we would do this for each of the distinct ParticipantId. 
+In our dataset, we can see that only two items are missing in the Smoking column, both participants (ParticipantId 1861 and ParticipantId 1933) have a diagnosis report of not being hypertensive and have values that fall within the normal distribution for the systolic and diastolic blood pressure measurement, so it seems like these samples are already well represented and it wouldn't affect our result to remove these rows from our dataset.
 
-From our initial analysis, we saw that the Diastolic measure (DSB column) is evenly distributed and fairly symmetrical with both mean and median approximately 80**mmHg**, so given the distribution, the mean is robust enough as it properly generalizes the data we have. We would also apply the missing data based on the location by getting the average measure for the location of the participant. For the Systolic measures (SBP) we would do something similar but instead of using the mean, we would use the median, the reason for this is because based on our earlier analysis, we noticed that there are variables which skewed the distribution and median is more robust than mean for such distributions, so it better captures the distribution. In the case of SBP, we also didn't just group by Location, we also grouped by gender to get the median values used for impute. 
+For Alcohol, there are 59 missing values, a small amount, however we would be inputing the data. Our method for inputing would be based on the participant id and their average number of glasses in rows where they have data for Alcohol. So for example, for participantId 1145 which has 2 missing glasses of alcohol values, we would get the average (mean) number of glasses of alcohol this participant takes and the use that to input the glasses of alcohol for the missing value, and we would do this for each of the distinct ParticipantId.
 
-For BMI missing data, we would use the mean to fill the missing data because we can see from the analysis earlier that the distribution is distributed and slightly vary by location. And for the Met_m variable, we would simply remove rows with missing data as there are just 8 of them. 
+From our initial analysis, we saw that the Diastolic measure (DSB column) is evenly distributed and fairly symmetrical with both mean and median approximately 80**mmHg**, so given the distribution, the mean is robust enough as it properly generalizes the data we have. We would also apply the missing data based on the location by getting the average measure for the location of the participant. For the Systolic measures (SBP) we would do something similar but instead of using the mean, we would use the median, the reason for this is because based on our earlier analysis, we noticed that there are variables which skewed the distribution and median is more robust than mean for such distributions, so it better captures the distribution. In the case of SBP, we also didn't just group by Location, we also grouped by gender to get the median values used for impute.
 
-While there are many more ways to handle missing data which could get complex based on result of contextual analysis, our methods have been effective as it ensured our distribution didn't change shape. 
+For BMI missing data, we would use the mean to fill the missing data because we can see from the analysis earlier that the distribution is distributed and slightly vary by location. And for the Met_m variable, we would simply remove rows with missing data as there are just 8 of them.
 
-We also explored the dietary calcium column earlier in **Fig6** and **Fig7**, and we noticed that the data was massively skewed due to some outliers that seems like impossible numbers. According to the US National Institute of Health, the recommended daily intake varies by age as shown in the following table;  
+While there are many more ways to handle missing data which could get complex based on result of contextual analysis, our methods have been effective as it ensured our distribution didn't change shape.
+
+We also explored the dietary calcium column earlier in **Fig6** and **Fig7**, and we noticed that the data was massively skewed due to some outliers that seems like impossible numbers. According to the US National Institute of Health, the recommended daily intake varies by age as shown in the following table;
 
 ```{r, echo=FALSE, warning=FALSE}
 calcium_recommended <- tibble(
@@ -626,10 +628,9 @@ kable(description_table, caption = "Recommended Calcium daily intake") %>%
   kable_classic(bootstrap_options = c("striped", "condensed"))
 ```
 
-From the above table, if we compare with *Fig7* we would see that several of the participants take above 1,500*mg/day*. For the data point causing the most skew, if we filter our data we would see that this participant (participantId 2898) had that value in 2000, meanwhile his values in other years are all below 500 even when other variables seem pretty constant, so there's a high chance this was an input error and so we would be removing this outlier. Another reason for removing this outlier is that it offers nothing of importance to our analysis as there's too few of them around those values. Concerning the other values in this column that are shown as outliers in *Fig7*, if we check the quantiles we would see that 99% of participants take below 1500*mg* and only about 1% take above this. For the purpose of our analysis comparing Blood pressure, we would leave these values as features as it doesn't like they were input errors. 
+From the above table, if we compare with *Fig7* we would see that several of the participants take above 1,500*mg/day*. For the data point causing the most skew, if we filter our data we would see that this participant (participantId 2898) had that value in 2000, meanwhile his values in other years are all below 500 even when other variables seem pretty constant, so there's a high chance this was an input error and so we would be removing this outlier. Another reason for removing this outlier is that it offers nothing of importance to our analysis as there's too few of them around those values. Concerning the other values in this column that are shown as outliers in *Fig7*, if we check the quantiles we would see that 99% of participants take below 1500*mg* and only about 1% take above this. For the purpose of our analysis comparing Blood pressure, we would leave these values as features as it doesn't like they were input errors.
 
-We can go further to perform other actions like reshaping the data, create new variables, etc. But these are mostly dependent on context and intent of analysis or question being asked when done at this stage. After doing the cleanup above, our dataset is now looking cleaner with no missing values, values properly imputed or removed as well as outliers addressed. Our data now looks like this compared to **Table 3**   
-
+We can go further to perform other actions like reshaping the data, create new variables, etc. But these are mostly dependent on context and intent of analysis or question being asked when done at this stage. After doing the cleanup above, our dataset is now looking cleaner with no missing values, values properly imputed or removed as well as outliers addressed. Our data now looks like this compared to **Table 3**
 
 ```{r, echo=FALSE, cache=TRUE}
 cleaned_bp_data <- cleaned_bp_data |>
@@ -646,7 +647,6 @@ kable(data_head, caption = "Table 3: Sample from data", booktabs = TRUE) %>%
   kable_classic(c("striped"), full_width = T)
 ```
 
-In the above table taking at the same slice from **Table 3** we can see that the data is looking different with no missing values as well. Up next we would start analysing our cleaned data to get more indept insights and identify patterns.   
+In the above table taking at the same slice from **Table 3** we can see that the data is looking different with no missing values as well. Up next we would start analysing our cleaned data to get more indept insights and identify patterns.
 
-#### Exploratory Data Analysis. 
-
+#### Exploratory Data Analysis.
