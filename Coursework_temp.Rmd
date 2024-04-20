@@ -1,0 +1,197 @@
+---
+title: "CourseworkTemp"
+author: "Chidiebere Nwokocha"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+#### Exploratory Data Analysis.  
+- Before going to the datamining section, lets do a small t-test to test check if the difference we see in the average of rural and urban population is significant, and also do a test to 
+- Explore other inputation strategies like for SBP and DBP we can use something like a regression model for imputation to preserve the relationship between variables
+
+```{r, echo=FALSE, cache=FALSE, include=FALSE}
+
+cor1 <- cleaned_bp_data |> 
+  select(Age, SBP, DBP, BMI, NRG, DietCa, Met_m) |>
+  plot(col="#69b3a2", pch = 20)
+
+cor2 <- cleaned_bp_data |> 
+  select(Age, SBP, DBP, BMI, NRG, DietCa, Met_m) |>
+  cor(method = c("spearman"))|>
+  corrplot()
+
+df <- tibble(tips) # Location, Smoking, Alcohol, BMI, NRG, Met_m,
+cleaned_bp_data |>
+  filter(Location == "Rural") |>
+  ggally_points(aes(x = NRG, y = DietCa, color = Bp.State)) +
+  scale_fill_viridis() +
+  theme_minimal()
+
+cleaned_bp_data |>
+  ggally_colbar(aes(x = Location, y = DgHBP)) +
+  scale_color_viridis(discrete = TRUE) +
+  theme_minimal()
+
+cleaned_bp_data |> 
+  ggally_autopoint(aes(x = Bp.State, y = Smoking, color = Gender )) +
+  scale_x_discrete(limits = c("Normal", "Elevated", "HBP Stage 1", "HBP Stage 2", "HBP Stage 3" )) +
+  facet_wrap(~Location)
+
+cleaned_bp_data |>
+  filter(DietCa > 1500) |>
+  ggally_autopoint(aes(x = DietCa, y = Bp.State))
+
+cleaned_bp_data |> 
+  ggally_count(aes(x = Bp.State, y = Smoking, color = Gender )) +
+  scale_x_discrete(limits = c("Normal", "Elevated", "HBP Stage 1", "HBP Stage 2", "HBP Stage 3")) 
+
+cleaned_bp_data |> 
+  ggally_crosstable(aes(x = Bp.State, y = Location), cells = "col.prop", fill = "std.resid") +
+  scale_x_discrete(limits = c("Normal", "Elevated", "HBP Stage 1", "HBP Stage 2", "HBP Stage 3")) 
+
+
+cleaned_bp_data |> 
+  ggally_facetbar(aes(x = Bp.State, y = Location)) +
+  scale_x_discrete(limits = c("Normal", "Elevated", "HBP Stage 1", "HBP Stage 2", "HBP Stage 3"))
+
+p_ <- GGally::print_if_interactive
+cleaned_bp_data |>
+  ggally_trends(aes(x = Year, y = Bp.State), size = 2) + #, color = Gender
+  facet_grid(~Location)
+
+cleaned_bp_data |>
+  ggally_box(aes(x = DietCa, y = Bp.State))
+
+cleaned_bp_data |>
+  ggally_dot(aes(x = NRG, y = Gender, colour = Smoking), size = 0.8) 
+
+cleaned_bp_data |>
+  ggally_facetdensity(aes(x = DietCa, y = Bp.State, colour = Smoking)) 
+
+cleaned_bp_data |>
+  ggally_autopointDiag(aes(x = DietCa, colour = Bp.State), size = 1)
+
+cleaned_bp_data |>
+  ggally_barDiag(aes(x = Bp.State, colour = Gender)) +
+  scale_x_discrete(limits = c("Normal", "Elevated", "HBP Stage 1", "HBP Stage 2", "HBP Stage 3")) +
+  theme_minimal()
+
+cleaned_bp_data |>
+  ggally_barDiag(aes(x = Met_m, colour = Bp.State), binwidth =10) +
+  theme_minimal()
+
+cleaned_bp_data |>
+  filter(BMI > 27) |>
+  ggally_autopointDiag(aes(x = Bp.State, color = Gender)) +
+  scale_x_discrete(limits = c("Normal", "Elevated", "HBP Stage 1", "HBP Stage 2", "HBP Stage 3")) +
+  theme_minimal()
+
+cleaned_bp_data |>
+  mutate(
+    Smoking = as.numeric(Smoking),
+    Bp.State = as.numeric(Bp.State),
+    Location = as.numeric(Location),
+    Gender = as.numeric(Gender),
+    DgHBP = as.numeric(DgHBP)
+    ) |> # select(Age, SBP, DBP, BMI, NRG, DietCa, Met_m, Alcohol, ParticipantId, as.numeric(Smoking))
+  select(-c(Year, Nation)) |>
+  ggcorr(method = c("everything", "pearson"), label = TRUE)
+
+```
+
+
+Does Dietary Calcium intake influence Blood Pressure and Hypertension risk?  
+```{r, echo=FALSE}
+cleaned_bp_data |>
+  ggplot(aes(sample = DietCa, colour = DgHBP)) +
+  stat_qq() +
+  stat_qq_line()
+
+cleaned_bp_data |>
+  filter(AgeGroup == "Adult") |>
+  ggplot(aes(x = DietCa, y = DgHBP)) +
+  geom_jitter()
+
+
+```
+
+### NRG     
+
+```{r, echo=FALSE}
+bp_raw_data |>
+  filter(NRG < 20000) |>
+  ggplot(aes(x = NRG), colour = "white") +
+  geom_boxplot() +
+  coord_flip() +
+  theme_minimal()
+
+bp_raw_data |>
+  filter(NRG >= 10000) |>
+  group_by(DgHBP) |>
+  summarise(
+    avgMet = median(Met_m, na.rm = TRUE),
+    avgBmi = mean(BMI, na.rm = TRUE),
+    avgDietCa = median(DietCa, na.rm = TRUE),
+    avgEnergy = median(NRG)
+  )
+```
+
+
+Are there differences between blood pressure and hypertension prevalence between urban and rural population, and does the difference we see a significant difference
+```{r, echo=FALSE}
+
+``` 
+
+
+ We observe that majority of participants take below 700*mg* per day, therefore something might be wrong with the data to cause such a massive skew, or test the hypothesis that there would be high prevalence or elevated risk of high blood pressure among participants with high values
+In this dataset, one worry was to see if dietary calcium impacted blood pressure.
+```{r, echo=FALSE, include=FALSE}
+check_calcium_recommendation <- function(age, intake) {
+  # Define recommended calcium intake by age
+  recommended <- ifelse(age >= 13 & age <= 18, c(700.0, 1300.0),
+                 ifelse(age >= 19 & age <= 50, c(400.0, 800.0), 
+                 ifelse(age >= 51 & age <= 70, c(400.0, 1000.0),
+                 ifelse(age > 70, c(600.0, 1300.0), c(0.0, 0.0)))))
+  
+  ifelse(intake >= recommended[1] & intake <= recommended[2], "Recommended", "Not Recommended")
+}
+
+cleaned_bp_data <- cleaned_bp_data |>
+  mutate(Calc.Recommended = check_calcium_recommendation(Age, DietCa)) |>
+  mutate(Calc.Recommended = factor(Calc.Recommended, levels = c("Recommended", "Not Recommended")))
+
+cleaned_bp_data |>
+  ggplot(aes(x = Calc.Recommended, fill = Bp.State)) +
+  geom_bar()
+
+cleaned_bp_data |>
+  group_by(Calc.Recommended, Bp.State) |>
+  summarise(
+    avgDiet = median(DietCa),
+    avgPhys = median(Met_m),
+    avgEnergy = median(NRG),
+    avgAlcohol = median(Alcohol),
+    avgBMI = mean(BMI),
+    avgAge = mean(Age),
+    cnt = n()
+  )
+
+cleaned_bp_data |>
+  group_by(Bp.State) |>
+  summarise(
+    avg = mean(DietCa)
+  )
+
+cleaned_bp_data |>
+  ggplot(aes(x = Bp.State, y = DietCa)) +
+  geom_boxplot()
+
+cleaned_bp_data |>
+  group_by(AgeGroup, DgHBP) |>
+  summarise(
+    avg = mean(BMI),
+    cnt = n()
+  )
+
+
+```
