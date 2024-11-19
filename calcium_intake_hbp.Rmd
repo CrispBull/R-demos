@@ -47,7 +47,7 @@ According to the WHO, high blood pressure cases an estimated 7.5million deaths a
 ```{r, echo=FALSE, cache=TRUE}
 ## Importing data used in analysis. 
 
-bp_raw_data <- read_xlsx("~/Desktop/coursework2 BI datasets/DATASET_DIETARY CALCIUM INTAKE AND HYPERTENSION IN URBAN AND RURAL POPULATIONS.xlsx")
+bp_raw_data <- read_xlsx("~/Desktop/datasets/DATASET_DIETARY CALCIUM INTAKE AND HYPERTENSION IN URBAN AND RURAL POPULATIONS.xlsx")
 bp_calcium_data <- bp_raw_data
 ```
 
@@ -985,7 +985,7 @@ randforest_pred <- randomForest(formula = DgHBP_num~., data = final_train_data, 
 We can see a summary of the model in the image below. 
 
 ```{r, echo=FALSE, out.width="80%", out.height="50%"}
-knitr::include_graphics("random_forest_summary.png") 
+knitr::include_graphics("img/random_forest_summary.png") 
 ```
 
 While we can use a confusion matrix or Accuracy to measure the performance of our model, in the case of random forest classification we use the out-of-bag (OOB) error rate. From the picture above, we see our model provides a confusion matrix as well as the OOB rate. In a random forest, each tree is constructed using a sample from the original data, because the sampling is with replacement, some observations may be repeated in each sample and some left out. The observations that are left out of a particular sample are the out of bag observations. After a tree is drawn, its prediction accuracy is tested on the out-of-bag sample which acts like a validation set, this is done for all trees. For a classification task, the final OOB prediction for each data point is the class that receives the majority votes among all the trees for that data point. The OOB error is then calculated by comparing all OOB predictions against the true labels or values and for classification, this is the percent that is incorrectly classified, the lower the rate value, the better.  
