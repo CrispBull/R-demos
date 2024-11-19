@@ -6,12 +6,16 @@ library(lubridate)
 library(ggmosaic)
 library(DT)
 
-auth("justchidi.bsky.social")
-get_skeets_authored_by("justchidi.bsky.social")
+pwd <- Sys.getenv("MY_PWD")
+authUser <- Sys.getenv("AUTH_USER")
+user <- Sys.getenv("TEST_USER")
 
-profile <- get_user_info("justchidi.bsky.social")
+auth(authUser)
+get_skeets_authored_by(authUser)
+
+profile <- get_user_info(authUser)
 names(profile)
-user_posts <- get_skeets_authored_by("kelseyhightower.com", limit = 1000L)
+user_posts <- get_skeets_authored_by(user, limit = 1000L)
 
 formatted_data <- user_posts |> 
   mutate(
@@ -34,7 +38,7 @@ table_df = as.data.frame(freq_table)
 ggplot(table_df, aes(Var1, Var2, fill = Freq)) +
   geom_tile(color = "white") +
   scale_fill_gradient(low = "white", high = "blue") +
-  labs(title = "Heatmap of Kesley's bsky activity ",
+  labs(title = "Heatmap of bsky activity ",
        x = "Day of week",
        y = "Tme of day",
        fill = "Frequency") +
@@ -48,17 +52,16 @@ colnames(tl)
 
 # Hard to work with data returned from atrrr
 ## get user profile
-acc_name <- "kelseyhightower.com"
-kesley_profile <- get_user_info(acc_name)
-colnames(kesley_profile)
+bsky_profile <- get_user_info(user)
+colnames(bsky_profile)
 
 # explore profile details
 
-kesley_profile |> 
+bsky_profile |> 
   glimpse()
 
 # Post data analysis
-posts <- get_skeets_authored_by(acc_name, limit = 1000L)
+posts <- get_skeets_authored_by(user, limit = 1000L)
 posts |> glimpse()
 
 original_posts <- posts |> 
@@ -201,17 +204,18 @@ original_posts |>
 
 # bskyr
 # authenticate
-bs_auth("justchidi.bsky.social", "j7ex-wco5-k47q-pej5")
-set_bluesky_user("justchidi.bsky.social")
-set_bluesky_pass("j7ex-wco5-k47q-pej5")
+
+bs_auth(authUser, pwd) #pwd_invalid
+set_bluesky_user(authUser)
+set_bluesky_pass(pwd)
 
 # get profile for analytics
-just_chidi <- bs_get_profile("justchidi.bsky.social")
-kesl_high <- bs_get_profile("kelseyhightower.com")
+auth_prof <- bs_get_profile(authUser)
+usr_prof <- bs_get_profile(user)
 
-kesl_high |> glimpse()
+auth_prof |> glimpse()
 
-jonzing <- get_user_info("justchidi.bsky.social")
+jonzing <- get_user_info(authUser)
 
 
 
