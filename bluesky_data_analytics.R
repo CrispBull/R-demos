@@ -1,10 +1,12 @@
 library(atrrr)
-library(bskyr)
 library(tidyverse)
 library(purrr)
 library(lubridate)
 library(ggmosaic)
 library(DT)
+library(pak)
+pak('christopherkenny/bskyr')
+
 
 pwd <- Sys.getenv("MY_PWD")
 authUser <- Sys.getenv("AUTH_USER")
@@ -202,12 +204,91 @@ original_posts |>
   ) +
   theme_gray()
 
+## Network analysis
+# - find people followed by lots of people you follow but not you
+# - find people that people you follow mostly interact with but you don't follow.
+# interactions here would be mentions, quote, reply, retweet
+
+extract_did <- function(url) {
+  return(strsplit(url, "/")[[1]][3])
+}
+
+# - To find the people followed by lots of people you follow but not by you, first 
+# we get the people you follow, then we iterate through the people you follow and find the
+# people they follow, and then we check put this group in a set and keep adding to this set
+# for all the people you follow, then in the end we count which set has the highest number of your
+# followers, this way we can tell how many of your follows fall in the set of a given user
+user_profile <- bs_get_profile(authUser)
+num_following <- as.integer(user_profile$follows_count)
+num_followers <- as.integer(user_profile$followers_count)
+user_following <- get_follows(authUser, num_following + 20) # do some data cleaning 
+user_followers <- get_followers(authUser, num_followers + 20)
+following_list <- user_following$actor_handle
+
+following_set <- new.env(hash = TRUE, parent = emptyenv())
+for (flw in following_list) {
+  following_set[[flw]] <- TRUE
+}
+
+counts <- new.env(hash = TRUE, parent = emptyenv())
+
+for (flw in following_list) {
+  # get profile
+  flw_prof = bs_get_profile(flw)
+  # get num of followers
+  n_flw <- as.integer(flw_prof$follows_count)
+  # retrieve list of people followed
+  follower_following <- get_follows(flw, n_flw + 20)
+  # get as list
+  follower_following_list <- follower_following$actor_handle
+  
+  # iterate through follower following list and map to set
+  for (flw_x in follower_following_list) {
+    if (flw_x == authUser || exists(flw_x, envir = following_set)) {
+      next
+    }
+    
+    # update counts
+    if (exists(flw_x, envir = counts)) {
+      counts[[flw_x]] <- counts[[flw_x]] + 1
+    } else {
+      counts[[flw_x]] <- 1
+    }
+  }
+  Sys.sleep(5)
+}
+
+counts_df <- data.frame(
+  actor_handle = names(counts),
+  count = as.numeric(unlist(as.list(counts))),
+  stringsAsFactors = FALSE
+)
+
+counts_df <- counts_df[order(-counts_df$count), ]
+
+# row.names(counts_df) <- NULL
+print(head(counts_df, 10))
+
+
+did_url <- "at://did:plc:nykjaibtu4x5cmbqww4v447k/app.bsky.feed.post/3l7vyt5777k2x"
+addr <- extract_did(did_url)
+johnDoe <- get_user_info(addr)
+johnDoe
+
 # bskyr
 # authenticate
 
 bs_auth(authUser, pwd) #pwd_invalid
 set_bluesky_user(authUser)
 set_bluesky_pass(pwd)
+
+
+
+johnDoe <- bs_get_profile("0x0.boo")
+johnDoe |> 
+  glimpse()
+
+
 
 # get profile for analytics
 auth_prof <- bs_get_profile(authUser)
