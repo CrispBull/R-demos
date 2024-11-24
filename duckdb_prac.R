@@ -3,6 +3,7 @@
 # References
 # - Installation process here https://github.com/duckdb/duckdb-r
 # - https://posit.co/blog/databases-with-posit
+# - official doc https://duckdb.org/docs/api/r
 
 # Tips
 " - Use duckdb as the data warehouse for the data model, use data.table for in memory operations
@@ -94,12 +95,18 @@ copy_cmd <- paste0("COPY ", table_name, " FROM 'weather.csv' (FORMAT CSV, HEADER
 dbExecute(con, copy_cmd)
 dbGetQuery(con, "SELECT count(*) FROM nycfl_weather23_table") # populated
 
+# Another alternative to the above is using the duckdb_read_csv which would help us read a csv
+# file and save it into duckdb table. Its recommended than reading into R first then writing into duckdb
+
 "
 SELECT origin, wind_dir, wind_speed, wind_gust, time_hour
 FROM 'nycfl_weather23_table'
 LIMIT 20;
 " -> cmd
 dbGetQuery(con, cmd)
+
+
+
 
 
 # show all databases in duckdb connection
