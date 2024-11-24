@@ -6,9 +6,12 @@ library(ggmosaic)
 library(DT)
 library(pak)
 pak('christopherkenny/bskyr')
+library(bskyr)
 
-
-pwd <- Sys.getenv("MY_PWD")
+# Goal, Track engagement, analyze growth, understand your audience, engagement analysis, content analysis,
+# community analysis, posting pattern. Account insights, interactions analysis
+#blueview, skykit
+pwd <- Sys.getenv("AUTH_PWD")
 authUser <- Sys.getenv("AUTH_USER")
 user <- Sys.getenv("TEST_USER")
 
@@ -207,6 +210,7 @@ original_posts |>
 ## Network analysis
 # - find people followed by lots of people you follow but not you
 # - find people that people you follow mostly interact with but you don't follow.
+# - Create interactions you've had with other users and plot with network visualization libraries
 # interactions here would be mentions, quote, reply, retweet
 
 extract_did <- function(url) {
@@ -269,6 +273,23 @@ counts_df <- counts_df[order(-counts_df$count), ]
 # row.names(counts_df) <- NULL
 print(head(counts_df, 10))
 
+# Sentiment analysis to check average sentiment in a feed or hashtag over a given period of time 
+# and visualize the distribution of sentiments
+
+# Follower growth progression over time
+
+# Save and reuse plots in Shiny and add interactivity
+
+# Show most frequently used hashtags
+
+# A heatmap of user activity. Like how active user was per day and a way to visualize all these together. 
+
+# Account statistics (grouped by time for past 7 days, past month, etc) like follower, follows, posts, likes,
+# repost, quotes, most liked, most reposted, most interactions, 
+
+# Performance optimization 
+
+# Hosting and deployment
 
 did_url <- "at://did:plc:nykjaibtu4x5cmbqww4v447k/app.bsky.feed.post/3l7vyt5777k2x"
 addr <- extract_did(did_url)
@@ -278,7 +299,7 @@ johnDoe
 # bskyr
 # authenticate
 
-bs_auth(authUser, pwd) #pwd_invalid
+bs_auth(authUser, pwd, save_auth = TRUE) #pwd_invalid
 set_bluesky_user(authUser)
 set_bluesky_pass(pwd)
 
