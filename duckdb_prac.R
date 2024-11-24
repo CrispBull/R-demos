@@ -19,11 +19,6 @@ library(duckdb)
 library(dbplyr)
 library(dplyr)
 library(nycflights23)
-library(arrow)
-library(shiny)
-library(shinydashboard)
-library(plotly)
-library(shinyauthr)
 
 con <- dbConnect(duckdb()) # creates an in-memory database, so dbdir = ":memory:"
 
