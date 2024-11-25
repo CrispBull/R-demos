@@ -3,3 +3,5 @@
 .RData
 .Ruserdata
 DSReload.Rproj
+data/seattle-library-checkouts data/seattle-library-checkouts.csv
+data/seattle-library-checkouts data/seattle-library-checkouts.csv
