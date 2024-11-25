@@ -11,7 +11,6 @@ as data.table is usually much faster for memory operations. So it'll be like in 
 is my mart and i'm pulling from my warehouse (duckdb)
 
 - Don't use prepared statement for large data transfers into duckdb
-
 "
 
 
@@ -104,10 +103,6 @@ FROM 'nycfl_weather23_table'
 LIMIT 20;
 " -> cmd
 dbGetQuery(con, cmd)
-
-
-
-
 
 # show all databases in duckdb connection
 dbGetQuery(con, "SHOW DATABASES")
